@@ -6,7 +6,7 @@
   <!-- skoop-live-runtime -->
   <script src="./skoop-live.js"></script>
   <script>
-  // Skoop live-preview fetch shim — only active when dirty data is injected
+  // Skoop live-preview fetch shim
   (function () {
     if (typeof window === 'undefined' || !window.__skoop_dirty_data__) return;
     var dirty = window.__skoop_dirty_data__;
@@ -14,7 +14,6 @@
     window.fetch = function (input, init) {
       try {
         var url = typeof input === 'string' ? input : (input && input.url) || '';
-        // Match bare 'data.json', './data.json', or any URL ending /data.json (with or without query)
         if (/(^|\/)data\.json(\?.*)?$/.test(url) || url === 'data.json') {
           var body = JSON.stringify(dirty);
           return Promise.resolve(new Response(body, {
@@ -26,17 +25,18 @@
       return origFetch ? origFetch(input, init) : Promise.reject(new Error('fetch unavailable'));
     };
   })();
-</script>
+  </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lahore Weather</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --primary: #00b7af;
-            --dark: #10181f;
+            --primary: #ffffff;
             --light: #ffffff;
-            --secondary: #6a7071;
+            --secondary: rgba(255, 255, 255, 0.8);
+            --bg-overlay: rgba(0, 0, 0, 0.25);
+            --container-bg: rgba(255, 255, 255, 0.15);
         }
 
         * {
@@ -47,7 +47,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--dark);
+            background-color: #10181f;
+            background-image: linear-gradient(135deg, #10181f 0%, #2a3b4c 100%);
             color: var(--light);
             display: flex;
             flex-direction: column;
@@ -56,25 +57,80 @@
             min-height: 100vh;
             overflow: hidden;
             text-align: center;
+            transition: background 1.5s ease;
+        }
+
+        /* Weather Themes */
+        body.theme-clear {
+            background-image: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            --primary: #ffeb3b;
+        }
+
+        body.theme-clouds {
+            background-image: linear-gradient(135deg, #606c88 0%, #3f4c6b 100%);
+        }
+
+        body.theme-fog {
+            background-image: linear-gradient(135deg, #757F9A 0%, #D7DDE8 100%);
+            color: #111;
+            --secondary: rgba(0, 0, 0, 0.6);
+            --primary: #222;
+            --container-bg: rgba(255, 255, 255, 0.4);
+        }
+
+        body.theme-rain {
+            background-image: linear-gradient(135deg, #141E30 0%, #243B55 100%);
+            --primary: #4facfe;
+        }
+
+        body.theme-snow {
+            background-image: linear-gradient(135deg, #E0EAFC 0%, #CFDEF3 100%);
+            color: #222;
+            --secondary: rgba(0, 0, 0, 0.6);
+            --primary: #005c97;
+            --container-bg: rgba(255, 255, 255, 0.5);
+        }
+
+        body.theme-thunder {
+            background-image: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            --primary: #e0c3fc;
+        }
+
+        /* Background animated pattern for extra flair */
+        .bg-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            opacity: 0.5;
         }
 
         .weather-container {
-            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            z-index: 1;
+            background: var(--container-bg);
             padding: 4rem;
-            border-radius: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             max-width: 90vw;
-            width: 600px;
-            backdrop-filter: blur(10px);
+            width: 650px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             animation: fadeIn 1s ease-out;
+            transition: all 1s ease;
         }
 
         .location {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.2rem;
             letter-spacing: 2px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .country {
@@ -83,6 +139,7 @@
             margin-bottom: 3rem;
             text-transform: uppercase;
             letter-spacing: 4px;
+            font-weight: 600;
         }
 
         .weather-main {
@@ -95,40 +152,45 @@
         .icon-container {
             color: var(--primary);
             margin-bottom: 1rem;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+            transition: color 1s ease;
         }
 
         .icon-container svg {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
+            animation: float 6s ease-in-out infinite;
         }
 
         .temperature {
-            font-size: 7rem;
+            font-size: 8rem;
             font-weight: 800;
             line-height: 1;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .description {
-            font-size: 2rem;
+            font-size: 2.5rem;
             color: var(--secondary);
             text-transform: capitalize;
-            margin-bottom: 3rem;
+            margin-bottom: 3.5rem;
+            font-weight: 500;
         }
 
         .details {
             display: flex;
             justify-content: space-around;
             width: 100%;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 2.5rem;
         }
 
         .detail-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.8rem;
         }
 
         .detail-icon {
@@ -136,29 +198,31 @@
         }
 
         .detail-value {
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.8rem;
+            font-weight: 700;
         }
 
         .detail-label {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: var(--secondary);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            font-weight: 600;
         }
 
         .last-updated {
-            margin-top: 2rem;
-            font-size: 0.9rem;
+            margin-top: 2.5rem;
+            font-size: 1rem;
             color: var(--secondary);
-            opacity: 0.6;
+            opacity: 0.8;
+            font-weight: 500;
         }
 
         .loader {
             display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255,255,255,.3);
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,.3);
             border-radius: 50%;
             border-top-color: var(--primary);
             animation: spin 1s ease-in-out infinite;
@@ -169,18 +233,27 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
         }
 
         .error-message {
             color: #ff6b6b;
             font-size: 1.5rem;
             display: none;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-pattern"></div>
 
     <div class="weather-container" id="weather-app">
         <div class="loader" id="loader"></div>
@@ -194,15 +267,20 @@
                 <div class="icon-container" id="weather-icon">
                     <i data-lucide="sun"></i>
                 </div>
-                <div class="temperature"><span id="temp">--</span>°C</div>
+                <div class="temperature"><span id="temp">--</span>°</div>
                 <div class="description" id="desc">Loading...</div>
             </div>
 
             <div class="details">
                 <div class="detail-item">
-                    <i data-lucide="wind" class="detail-icon"></i>
+                    <i data-lucide="wind" class="detail-icon" width="32" height="32"></i>
                     <div class="detail-value"><span id="wind">--</span> km/h</div>
                     <div class="detail-label">Wind</div>
+                </div>
+                <div class="detail-item">
+                    <i data-lucide="droplets" class="detail-icon" width="32" height="32"></i>
+                    <div class="detail-value"><span id="humidity">--</span>%</div>
+                    <div class="detail-label">Humidity</div>
                 </div>
             </div>
 
@@ -211,34 +289,33 @@
     </div>
 
     <script>
-        // Initialize Lucide icons
         lucide.createIcons();
 
-        // Open-Meteo API details for Lahore
+        // Open-Meteo API details for Lahore (including humidity now)
         const LAT = 31.5497;
         const LON = 74.3436;
-        const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current_weather=true`;
+        const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current_weather=true&hourly=relativehumidity_2m`;
 
-        // Weather code mapping to descriptions and Lucide icons
+        // Weather code mapping to descriptions, icons, and themes
         const weatherCodes = {
-            0: { desc: 'Clear sky', icon: 'sun' },
-            1: { desc: 'Mainly clear', icon: 'sun' },
-            2: { desc: 'Partly cloudy', icon: 'cloud-sun' },
-            3: { desc: 'Overcast', icon: 'cloud' },
-            45: { desc: 'Fog', icon: 'cloud-fog' },
-            48: { desc: 'Depositing rime fog', icon: 'cloud-fog' },
-            51: { desc: 'Light drizzle', icon: 'cloud-drizzle' },
-            53: { desc: 'Moderate drizzle', icon: 'cloud-drizzle' },
-            55: { desc: 'Dense drizzle', icon: 'cloud-drizzle' },
-            61: { desc: 'Slight rain', icon: 'cloud-rain' },
-            63: { desc: 'Moderate rain', icon: 'cloud-rain' },
-            65: { desc: 'Heavy rain', icon: 'cloud-rain' },
-            71: { desc: 'Slight snow', icon: 'cloud-snow' },
-            73: { desc: 'Moderate snow', icon: 'cloud-snow' },
-            75: { desc: 'Heavy snow', icon: 'cloud-snow' },
-            95: { desc: 'Thunderstorm', icon: 'cloud-lightning' },
-            96: { desc: 'Thunderstorm with light hail', icon: 'cloud-lightning' },
-            99: { desc: 'Thunderstorm with heavy hail', icon: 'cloud-lightning' }
+            0: { desc: 'Clear sky', icon: 'sun', theme: 'clear' },
+            1: { desc: 'Mainly clear', icon: 'sun', theme: 'clear' },
+            2: { desc: 'Partly cloudy', icon: 'cloud-sun', theme: 'clouds' },
+            3: { desc: 'Overcast', icon: 'cloud', theme: 'clouds' },
+            45: { desc: 'Fog', icon: 'cloud-fog', theme: 'fog' },
+            48: { desc: 'Depositing rime fog', icon: 'cloud-fog', theme: 'fog' },
+            51: { desc: 'Light drizzle', icon: 'cloud-drizzle', theme: 'rain' },
+            53: { desc: 'Moderate drizzle', icon: 'cloud-drizzle', theme: 'rain' },
+            55: { desc: 'Dense drizzle', icon: 'cloud-drizzle', theme: 'rain' },
+            61: { desc: 'Slight rain', icon: 'cloud-rain', theme: 'rain' },
+            63: { desc: 'Moderate rain', icon: 'cloud-rain', theme: 'rain' },
+            65: { desc: 'Heavy rain', icon: 'cloud-rain', theme: 'rain' },
+            71: { desc: 'Slight snow', icon: 'cloud-snow', theme: 'snow' },
+            73: { desc: 'Moderate snow', icon: 'cloud-snow', theme: 'snow' },
+            75: { desc: 'Heavy snow', icon: 'cloud-snow', theme: 'snow' },
+            95: { desc: 'Thunderstorm', icon: 'cloud-lightning', theme: 'thunder' },
+            96: { desc: 'Thunderstorm with light hail', icon: 'cloud-lightning', theme: 'thunder' },
+            99: { desc: 'Thunderstorm with heavy hail', icon: 'cloud-lightning', theme: 'thunder' }
         };
 
         const loader = document.getElementById('loader');
@@ -253,7 +330,17 @@
                 const data = await response.json();
                 const current = data.current_weather;
 
-                updateUI(current);
+                // Get current humidity (from hourly data matching current time)
+                let currentHumidity = 50; // default fallback
+                try {
+                    const currentTime = current.time;
+                    const timeIndex = data.hourly.time.findIndex(t => t === currentTime);
+                    if (timeIndex !== -1) {
+                        currentHumidity = data.hourly.relativehumidity_2m[timeIndex];
+                    }
+                } catch(e) {}
+
+                updateUI(current, currentHumidity);
 
                 loader.style.display = 'none';
                 errorMsg.style.display = 'none';
@@ -266,37 +353,33 @@
             }
         }
 
-        function updateUI(current) {
-            // Update Temp and Wind
+        function updateUI(current, humidity) {
             document.getElementById('temp').textContent = Math.round(current.temperature);
             document.getElementById('wind').textContent = current.windspeed;
+            document.getElementById('humidity').textContent = humidity;
 
-            // Get Weather description and icon
-            const codeInfo = weatherCodes[current.weathercode] || { desc: 'Unknown', icon: 'cloud' };
+            const codeInfo = weatherCodes[current.weathercode] || { desc: 'Unknown', icon: 'cloud', theme: 'clouds' };
             document.getElementById('desc').textContent = codeInfo.desc;
 
-            // Update Icon
+            // Apply Theme to body
+            document.body.className = `theme-${codeInfo.theme}`;
+
             const iconContainer = document.getElementById('weather-icon');
             iconContainer.innerHTML = `<i data-lucide="${codeInfo.icon}"></i>`;
-            lucide.createIcons(); // Re-initialize icons for the new HTML
+            lucide.createIcons();
 
-            // Update time
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             document.getElementById('updated-time').textContent = `Last updated: ${timeString}`;
         }
 
-        // Initial fetch
         fetchWeather();
-
-        // Auto-update every 15 minutes for digital signage continuous display
         setInterval(fetchWeather, 15 * 60 * 1000);
     </script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./sw.js')
-          .then(function (reg) { console.log('[PWA] SW registered:', reg.scope); })
           .catch(function (err) { console.warn('[PWA] SW registration failed:', err); });
       });
     }
